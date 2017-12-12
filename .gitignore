@@ -1,0 +1,7 @@
+*.o
+.vs/
+.vscode/
+sequential
+parallel1
+parallel2
+parallel3
