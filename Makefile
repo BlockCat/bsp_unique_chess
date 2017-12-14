@@ -1,5 +1,5 @@
 CC=g++
-CFLAGS=-I. -I./src -I./includes -o3 -std=c++17
+CFLAGS=-I. -I./src -I./includes -o3 -std=c++11
 
 THCCHESS=thc-chess-library/chesslib.o
 MCBSP=MulticoreBSP-for-C/lib/$(wildcard mcbsp*.a)
