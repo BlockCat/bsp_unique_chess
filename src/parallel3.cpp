@@ -78,7 +78,7 @@ class Test : public mcbsp::BSP_program {
 			PositionSet nextLayer = execute(distribution);
 
 			// Clear distribution because we don't need it anymore
-			distribution.clear();
+			//distribution.clear();
 
 			// Redistribute the positions for the cores.
 			vector<PositionSet> redistribution = redistribute(nextLayer, corePositions);
@@ -87,7 +87,7 @@ class Test : public mcbsp::BSP_program {
 			distribution = redistribution[pid];							
 
 			// Empty the next layer because they are redistributed and put in corePositions
-			nextLayer.clear();
+			//nextLayer.clear();
 
 			// Send the redistribution to other cores.
 			sendRedistribution(redistribution);			
@@ -99,6 +99,12 @@ class Test : public mcbsp::BSP_program {
 			corePositions[pid].insert(distribution.begin(), distribution.end());
 
 			debug_bsp_sync();
+
+			unsigned long workSum = 0;
+			for (int tsi = 0; tsi < nprocs; tsi++) {
+				workSum += corePositions[tsi].size();
+			}
+			printf("(%d) Depth: %d, work done: %lu\n", pid, currentDepth, workSum);
 			debug_print("(%d) distribution size: %lu\n", pid, distribution.size());
 		}		
 

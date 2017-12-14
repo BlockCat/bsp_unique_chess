@@ -3,13 +3,16 @@ CFLAGS=-I. -I./src -I./includes -o3 -std=c++17
 
 THCCHESS=thc-chess-library/chesslib.o
 MCBSP=MulticoreBSP-for-C/lib/$(wildcard mcbsp*.a)
-all: chess
+all: parallel1 parallel2 parallel3 sequential sequential2
 
 parallel%: $(THCCHESS) $(MCBSP) src/parallel%.o	
 	$(CC) $(CFLAGS) $(word 3,$^) $(THCCHESS) -LMulticoreBSP-for-C/lib -lmcbsp1.2.0 -lm -pthread -lrt -o $@	
 
 sequential: $(THCCHESS) src/sequential.o src/GameTree.o
 	$(CC) $(CFLAGS) src/sequential.o src/GameTree.o $< -LMulticoreBSP-for-C/lib -lmcbsp1.2.0 -lm -pthread -lrt  -o $@
+
+sequential2: $(THCCHESS) src/sequential.1.o src/GameTree.o
+	$(CC) $(CFLAGS) src/sequential.1.o src/GameTree.o $< -LMulticoreBSP-for-C/lib -lmcbsp1.2.0 -lm -pthread -lrt  -o $@
 
 src/%.o: src/%.cpp	
 	$(CC) $(CFLAGS) -c $< -o $@
@@ -27,9 +30,8 @@ clean-bsp:
 clean-thc:
 	$(MAKE) -C thc-chess-library clean
 
-clean-own:
-	rm -f chess2
-	rm -f sequential
+clean-own:	
+	rm -f sequential*
 	rm -f src/*.o
 	rm -f parallel*
 

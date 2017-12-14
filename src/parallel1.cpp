@@ -96,6 +96,7 @@ class Test : public mcbsp::BSP_program {
 		PositionSet positions;
 		execute(positions, queue, max_depth - 1);
 
+		printf("There are %ld positions found in %d \n", positions.size(), (int)bsp_pid(), bsp_time() - start);
 		send(positions);
 		bsp_sync();
 		receive(positions);
