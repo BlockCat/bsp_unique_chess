@@ -16,6 +16,7 @@ struct CompressedLess {
 	size_t n;
 };
 
+typedef unsigned int CoreId;
 typedef btree::btree_set<CompressedPosition, CompressedLess> PositionSet;
 typedef vector<CompressedPosition> PositionList;
 typedef vector<Move> MoveList;
@@ -34,11 +35,9 @@ ChessRules* decompress(CompressedPosition position) {
 
 PositionSet GetChildren(ChessRules* board) {
 	PositionSet children;
+	
 	MoveList legal;
-
 	board->GenLegalMoveList(legal);
-
-
 
 	for (auto it = legal.begin(); it != legal.end(); it++) {
 		board->PlayMove(*it);
@@ -49,7 +48,7 @@ PositionSet GetChildren(ChessRules* board) {
 	return children;
 }
 
-PositionSet GetCompressedChildren(CompressedPosition position) {
+PositionSet GetCompressedChildren(CompressedPosition &position) {
 	ChessRules* board = new ChessRules();
 	board->Decompress(position);
 
@@ -62,16 +61,37 @@ PositionSet GetCompressedChildren(CompressedPosition position) {
 
 
 // Hash the board
-unsigned int HashBoard(CompressedPosition position) {	
+unsigned int HashBoard(CompressedPosition &position) {	
 
 	// Decompress the board
-	ChessPosition* board = new ChessPosition();
-	board->Decompress(position);
+	/*ChessPosition* board = new ChessPosition();
+	board->Decompress(position);*/
 
-	// Compress the board for the hash.
-	CompressedPosition compressed;
-	unsigned short hash = board->Compress(compressed);
-	free(board);
+	// Compress the board for the hash.	
+	unsigned short hash = (position.storage[0] +
+				position.storage[1] +
+				position.storage[2] +
+				position.storage[3] +
+				position.storage[4] +
+				position.storage[5] +
+				position.storage[6] +
+				position.storage[7] +
+				position.storage[8] +
+				position.storage[9] +
+				position.storage[10] +
+				position.storage[11] +
+				position.storage[12] +
+				position.storage[13] +
+				position.storage[14] +
+				position.storage[15] +
+				position.storage[16] +
+				position.storage[17] +
+				position.storage[18] +
+				position.storage[19] +
+				position.storage[21] +
+				position.storage[22] +
+				position.storage[23]) >> 1;
+	
 
 	//unsigned int hash = board->HashCalculate();	
 

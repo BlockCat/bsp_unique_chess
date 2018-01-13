@@ -53,13 +53,18 @@ class Test : public mcbsp::BSP_program {
 
 		positions.insert(rootPositions.begin(), rootPositions.end());
 
-		execute(positions, children, max_depth - 1);	
+		for (auto it = children.begin(); it != children.end(); it++) {
+			positions.insert(*it);
+			execute(positions, *it, max_depth - 1);
+
+			//children.erase(it);
+		}		
 
 		printf("There are %ld positions found, time: %f \n", positions.size(), bsp_time() - start);
     }        
 
 	// Execute own distribution
-	void execute(PositionSet& positions, PositionSet& queue, const int depth) {
+	void execute(PositionSet& positions, CompressedPosition& work, const int depth) {
 
 		if (depth <= 0) {
 			// The end is reached, so we want to add the chess boards that should have been processed to the set.		
@@ -69,39 +74,14 @@ class Test : public mcbsp::BSP_program {
 			return;
 		}	
 
-		// Prepare the working set for the next depth.
-		PositionSet next;		
+		PositionSet legals = GetCompressedChildren(work);
 
-		// Prepare iteration of the working queue.				
-		PositionSet::iterator it = queue.begin();
+		for (auto it = legals.begin(); it != legals.end(); it++) {
+			positions.insert(*it);
+			execute(positions, *it, depth - 1);
 
-		// Process each compressed position in the queue
-		while (it != queue.end()) {
-			
-			// Get the compressed position from the iterator
-			CompressedPosition compressed = *it;
-
-			positions.insert(compressed);
-
-			// Generate legal moves					
-			MoveList legal;
-			ChessRules* board = decompress(compressed);
-			board->GenLegalMoveList(legal);
-
-			for (auto cit = legal.begin(); cit != legal.end(); cit++) {
-				board->PushMove(*cit);
-
-				CompressedPosition temp = compress(board);
-
-				if (positions.insert(temp).second) {
-					next.insert(temp);
-				}				
-				board->PopMove(*cit);
-			}
-
-			it = queue.erase(it);			
-		}			
-		execute(positions, next, depth - 1);
+			//legals.erase(it);
+		}
 	}
     
     virtual BSP_program * newInstance() {

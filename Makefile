@@ -3,16 +3,16 @@ CFLAGS=-I. -I./src -I./includes -o3 -std=c++11
 
 THCCHESS=thc-chess-library/chesslib.o
 MCBSP=MulticoreBSP-for-C/lib/$(wildcard mcbsp*.a)
-all: parallel1 parallel2 parallel3 sequential sequential2
+all: parallel1 parallel2 parallel3 parallel4 sequential sequential2
 
-parallel%: $(THCCHESS) $(MCBSP) src/parallel%.o	
+parallel%: $(THCCHESS) $(MCBSP) src/parallel%.o	src/parallel_utils.o
 	$(CC) $(CFLAGS) $(word 3,$^) $(THCCHESS) -LMulticoreBSP-for-C/lib -lmcbsp1.2.0 -lm -pthread -lrt -o $@	
 
-sequential: $(THCCHESS) src/sequential.o src/GameTree.o
-	$(CC) $(CFLAGS) src/sequential.o src/GameTree.o $< -LMulticoreBSP-for-C/lib -lmcbsp1.2.0 -lm -pthread -lrt  -o $@
+sequential: $(THCCHESS) src/sequential.1.o
+	$(CC) $(CFLAGS) src/sequential.1.o $< -LMulticoreBSP-for-C/lib -lmcbsp1.2.0 -lm -pthread -lrt  -o $@
 
-sequential2: $(THCCHESS) src/sequential.1.o src/GameTree.o
-	$(CC) $(CFLAGS) src/sequential.1.o src/GameTree.o $< -LMulticoreBSP-for-C/lib -lmcbsp1.2.0 -lm -pthread -lrt  -o $@
+sequential2: $(THCCHESS) src/sequential.2.o
+	$(CC) $(CFLAGS) src/sequential.2.o $< -LMulticoreBSP-for-C/lib -lmcbsp1.2.0 -lm -pthread -lrt  -o $@
 
 src/%.o: src/%.cpp	
 	$(CC) $(CFLAGS) -c $< -o $@

@@ -8,7 +8,7 @@
 #include <btree_container.h>
 #include <cstdlib>
 #include <queue>
-#include "main.h"
+#include "parallel_utils.cpp"
 
 using namespace thc;
 using namespace std;
@@ -176,7 +176,7 @@ class Test : public mcbsp::BSP_program {
 	void send(PositionSet next) {
 		// Create a vector to send to the others.
 		// Vectors are a continouous memory strip.
-		CompressedQueue nextVector;
+		vector<CompressedPosition> nextVector;
 		nextVector.reserve(next.size());
 		nextVector.insert(nextVector.begin(), next.begin(), next.end());
 
