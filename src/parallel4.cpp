@@ -123,9 +123,9 @@ class Test : public mcbsp::BSP_program {
 
 		printf("(%d) total: %d, time: %f\n", pid, total, bsp_time() - start);
 		bsp_sync();
-		printf("(%d) total work: %d, effective: %f\n", pid, totalSum, totalSum / (float)totalWork );
+		printf("(%d) total work: %d, effective: %f\n", pid, totalSum, totalSum / (float)totalWork  - (1.0 / (float)nprocs) );
 		bsp_sync();
-		if (pid == 0) printf("\033[1;31mbold Total work: %d, effective: %f\n\033[0m", totalWork, total / (float)totalWork );
+		if (pid == 0) printf("\033[1;31mbold Total work: %d, effective: %f\n\033[0m", totalWork, (total / (float)totalWork));
 	}
 
 	/// Get the next layer of the distribution.

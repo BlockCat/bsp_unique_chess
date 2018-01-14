@@ -1,5 +1,6 @@
 #include <btree_set.h>
 #include<thc.h>
+#include<HashLookup.h>
 
 using namespace thc;
 using namespace std;
@@ -112,7 +113,7 @@ BoardHash hashPositionColor(const CompressedPosition &src, int color) {
 	BoardHash bHash = 0;
 
 	ChessPosition* position = new ChessPosition();
-	position->Decompress(src);
+	position->Decompress(src);	
 
 	for (int i = 0; i < 64; i++) {
 		char c = position->squares[i];		
@@ -123,8 +124,8 @@ BoardHash hashPositionColor(const CompressedPosition &src, int color) {
 				case 'N':
 				case 'B':
 				case 'Q':
-				case 'K':
-					bHash += (i * 1000 + c) >> 1;
+				case 'K':				
+					bHash ^= hash_lookup[i][c - 'B'];
 			}
 		}
 		if (color == BLACK) {
@@ -135,7 +136,7 @@ BoardHash hashPositionColor(const CompressedPosition &src, int color) {
 				case 'b':
 				case 'q':
 				case 'k':
-					bHash += (i * 1000 + c) >> 1;
+					bHash ^= hash_lookup[i][c - 'B'];
 			}
 		}		
 	}
