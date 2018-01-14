@@ -124,9 +124,10 @@ BoardHash hashPositionColor(const CompressedPosition &src, int color) {
 				case 'B':
 				case 'Q':
 				case 'K':
-					bHash += (c * i) >> 1;
+					bHash += (i * 1000 + c) >> 1;
 			}
-		} else {
+		}
+		if (color == BLACK) {
 			switch(c) {				
 				case 'p': 
 				case 'r': 
@@ -134,7 +135,7 @@ BoardHash hashPositionColor(const CompressedPosition &src, int color) {
 				case 'b':
 				case 'q':
 				case 'k':
-					bHash += (c * i) >> 1;
+					bHash += (i * 1000 + c) >> 1;
 			}
 		}		
 	}

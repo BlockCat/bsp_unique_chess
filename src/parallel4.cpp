@@ -146,52 +146,25 @@ class Test : public mcbsp::BSP_program {
 	/// This method distributes the positions over the different cores and adds them to the found list.
 	vector<PositionSet> redistribute(PositionSet &list, vector<PositionSet> &cores, int depth, const bool force = false) {
 
-		// We made a move in depth, and the list of position is in the next depth
-		//depth = depth + 1;
-
 		// Reserve space for redistribution set.
 		vector<PositionSet> corePositionSets = vector<PositionSet>(bsp_nprocs(), PositionSet());
 
 		CoreId currentCore = bsp_pid();
 		int nprocs = bsp_nprocs();
-		// If depth is uneven: white to move
-		// If depth is even: black to move		
+	
+		int color = (max_depth) % 2;		
+		if (currentCore == 0) printf("color: %d", color);
+		for (auto it = list.begin(); it != list.end(); it++) {
+			CompressedPosition position = *it;
+			BoardHash hash = hashPositionColor(position, color);
 
-		/*int color = 0;
-		bool skipLayer = false;
-		if (max_depth % 2 == 0) {
-			// If max_depth is even, then last moves are for black, hash on white.
-			// Therefor, if the current depth is for black (even), skip the layer.
-			skipLayer = depth % 2 == 0;
-			color = 0;
-		} else {
-			// If max_depth is uneven, then last moves are for white, hash on black.
-			// Therefor, if the current depth is for white (uneven), skip the layer.
-			skipLayer = depth % 2 == 1;
-			color = 1;
-		}*/
-		bool skipLayer = (max_depth + depth) % 2 == 0;
-		int color = (max_depth) % 2;
-		
-		//If depth
-		if (false && skipLayer) {
-			cores[currentCore].insert(list.begin(), list.end());
-			corePositionSets[currentCore].insert(list.begin(), list.end());
-		} else {
-			for (auto it = list.begin(); it != list.end(); it++) {
-				CompressedPosition position = *it;
-				BoardHash hash = hashPositionColor(position, color);
+			CoreId core = nprocs == 1 ? 0 : hash % nprocs;
 
-				CoreId core = nprocs == 1 ? 0 : hash % nprocs;
-
-				// If we haven't seen this one yet, send it.
-				if (cores[core].insert(position).second) {
-					corePositionSets[core].insert(position);
-				}
+			// If we haven't seen this one yet, send it.
+			if (cores[core].insert(position).second) {
+				corePositionSets[core].insert(position);
 			}
-		}
-
-		
+		}	
 
 		return corePositionSets;
 	}
