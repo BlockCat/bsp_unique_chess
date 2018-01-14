@@ -81,12 +81,6 @@ class Test : public mcbsp::BSP_program {
 			PositionSet nextLayer = execute(distribution);
 
 			unsigned long workSum = nextLayer.size();
-			/*for (int tsi = 0; tsi < nprocs; tsi++) {
-			workSum += corePositions[tsi].size();
-			}*/
-
-			// Clear distribution because we don't need it anymore
-			//distribution.clear();
 
 			// Redistribute the positions for the cores.
 			vector<PositionSet> &colorToMove = (currentDepth % 2 == 0) ? corePositionsBlackToMove : corePositionsWhiteToMove;
@@ -112,20 +106,30 @@ class Test : public mcbsp::BSP_program {
 
 		printf("There are %ld positions found in %d, time: %f \n", corePositionsBlackToMove[pid].size() + corePositionsWhiteToMove[pid].size(), (int)pid, bsp_time() - start);
 
+
+
+		int total = merge(corePositionsBlackToMove[pid].size() + corePositionsWhiteToMove[pid].size());
+		double timeItTook = bsp_time() - start;
+
+		printf("(%d) total: %d, time: %f\n", pid, total, timeItTook);
+		bsp_sync();
+		
+		// DEBUG METHODS
 		int totalSum = 0;
 		for (int i = 0; i < bsp_nprocs(); i++) {
 			totalSum += corePositionsBlackToMove[i].size() + corePositionsWhiteToMove[i].size();
 		}
 		int totalWork = merge(totalSum);
+		double totalTime = merge<double>(totalSum / (float)totalWork  - (1.0 / (float)nprocs) ) + bsp_nprocs() - 1;
 
-		int total = merge(corePositionsBlackToMove[pid].size() + corePositionsWhiteToMove[pid].size());
-
-
-		printf("(%d) total: %d, time: %f\n", pid, total, bsp_time() - start);
-		bsp_sync();
+		// ----------------------
 		printf("(%d) total work: %d, effective: %f\n", pid, totalSum, totalSum / (float)totalWork  - (1.0 / (float)nprocs) );
 		bsp_sync();
-		if (pid == 0) printf("\033[1;31mbold Total work: %d, effective: %f\n\033[0m", totalWork, (total / (float)totalWork));
+		if (pid == 0) {
+			printf("\033[1;31mbold Total work: %d, effective: %f\n\033[0m", totalWork, (total / (float)totalWork));
+			printf("Average work per core: %d\n", totalWork / nprocs);
+			printf("Average time per core: %f\n", totalTime / (float)nprocs);
+		}
 	}
 
 	/// Get the next layer of the distribution.
@@ -208,19 +212,21 @@ class Test : public mcbsp::BSP_program {
 	}
 
 	//Send size to processors.	
-	int merge(int amount) {
+	template<typename T>
+	T merge(T amount) {
 		int pid = bsp_pid();
-
+		bsp_set_tagsize<T>();
+		bsp_sync();
 		for (int i = 0; i < bsp_nprocs(); i++) {
 			bsp_send(i, &pid, &amount);
 		}
 
 		bsp_sync();
 
-		int sum = 0;
+		T sum = 0;
 		for (int i = 0; i < bsp_nprocs(); i++) {
-			int tempamount;
-			bsp_move<int>(&tempamount, 1);
+			T tempamount;
+			bsp_move<T>(&tempamount, sizeof(T));
 
 			sum += tempamount;
 		}
