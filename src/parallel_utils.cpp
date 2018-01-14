@@ -17,6 +17,7 @@ struct CompressedLess {
 };
 
 typedef unsigned int CoreId;
+typedef unsigned int BoardHash;
 typedef btree::btree_set<CompressedPosition, CompressedLess> PositionSet;
 typedef vector<CompressedPosition> PositionList;
 typedef vector<Move> MoveList;
@@ -61,14 +62,14 @@ PositionSet GetCompressedChildren(CompressedPosition &position) {
 
 
 // Hash the board
-unsigned int HashBoard(CompressedPosition &position) {	
+BoardHash HashBoard(CompressedPosition &position) {	
 
 	// Decompress the board
 	/*ChessPosition* board = new ChessPosition();
 	board->Decompress(position);*/
 
 	// Compress the board for the hash.	
-	unsigned short hash = (position.storage[0] +
+	BoardHash bHash = (position.storage[0] +
 				position.storage[1] +
 				position.storage[2] +
 				position.storage[3] +
@@ -95,6 +96,53 @@ unsigned int HashBoard(CompressedPosition &position) {
 
 	//unsigned int hash = board->HashCalculate();	
 
-	return hash;
+		// Thank you random person on the internet
+	// https://stackoverflow.com/questions/664014/what-integer-hash-function-are-good-that-accepts-an-integer-hash-key
+    bHash = ((bHash >> 16) ^ bHash) * 0x45d9f3b;
+    bHash = ((bHash >> 16) ^ bHash) * 0x45d9f3b;	
+    bHash = (bHash >> 16) ^ bHash;
+	return bHash;
 }
 
+#define WHITE 0
+#define BLACK 1
+
+
+BoardHash hashPositionColor(const CompressedPosition &src, int color) {
+	BoardHash bHash = 0;
+
+	ChessPosition* position = new ChessPosition();
+	position->Decompress(src);
+
+	for (int i = 0; i < 64; i++) {
+		char c = position->squares[i];		
+		if (color == WHITE) {
+			switch(c) {				
+				case 'P': 
+				case 'R': 
+				case 'N':
+				case 'B':
+				case 'Q':
+				case 'K':
+					bHash += (c * i) >> 1;
+			}
+		} else {
+			switch(c) {				
+				case 'p': 
+				case 'r': 
+				case 'n':
+				case 'b':
+				case 'q':
+				case 'k':
+					bHash += (c * i) >> 1;
+			}
+		}		
+	}
+
+	// Thank you random person on the internet
+	// https://stackoverflow.com/questions/664014/what-integer-hash-function-are-good-that-accepts-an-integer-hash-key
+    bHash = ((bHash >> 16) ^ bHash) * 0x45d9f3b;
+    bHash = ((bHash >> 16) ^ bHash) * 0x45d9f3b;	
+    bHash = (bHash >> 16) ^ bHash;
+    return bHash;
+}

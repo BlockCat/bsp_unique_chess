@@ -81,33 +81,25 @@ class Test : public mcbsp::BSP_program {
 			PositionSet nextLayer = execute(distribution);
 
 			unsigned long workSum = nextLayer.size();
-			/*for (int tsi = 0; tsi < nprocs; tsi++) {
-			workSum += corePositions[tsi].size();
-			}*/
-
-			// Clear distribution because we don't need it anymore
-			//distribution.clear();
 
 			// Redistribute the positions for the cores.
-			vector<PositionSet> &colorToMove = (currentDepth % 2 == 0) ? corePositionsBlackToMove : corePositionsWhiteToMove;
-			vector<PositionSet> redistribution = redistribute(nextLayer, colorToMove , currentDepth);
+			bool skipLayer = shouldSkipLayer(currentDepth);
+			vector<PositionSet> &currentColorToMove = (currentDepth % 2 == 0) ? corePositionsBlackToMove : corePositionsWhiteToMove;
+			vector<PositionSet> redistribution = redistribute(nextLayer, (currentDepth % 2 == 0) ? corePositionsBlackToMove : corePositionsWhiteToMove, currentDepth);
 
 			// Get the distribution for the next round
 			distribution = redistribution[pid];
 
 			// Send the redistribution to other cores.
-			sendRedistribution(redistribution);
+			if (!skipLayer) {
+				sendRedistribution(redistribution);
+				bsp_sync();
+				receiveDistribution(distribution);
 
-			bsp_sync();
-
-			receiveDistribution(distribution);
-			colorToMove[pid].insert(distribution.begin(), distribution.end());
-			debug_bsp_sync();
-
-
-
-			printf("(%d) Depth: %d, work done: %lu\n", pid, currentDepth, workSum);
-			debug_print("(%d) distribution size: %lu\n", pid, distribution.size());
+				((currentDepth % 2 == 0) ? corePositionsBlackToMove : corePositionsWhiteToMove)[pid].insert(distribution.begin(), distribution.end());
+				printf("(%d) Depth: %d, work done: %lu\n", pid, currentDepth, workSum);			
+			}
+			
 		}
 
 		printf("There are %ld positions found in %d, time: %f \n", corePositionsBlackToMove[pid].size() + corePositionsWhiteToMove[pid].size(), (int)pid, bsp_time() - start);
@@ -116,10 +108,9 @@ class Test : public mcbsp::BSP_program {
 		for (int i = 0; i < bsp_nprocs(); i++) {
 			totalSum += corePositionsBlackToMove[i].size() + corePositionsWhiteToMove[i].size();
 		}
+
 		int totalWork = merge(totalSum);
-
 		int total = merge(corePositionsBlackToMove[pid].size() + corePositionsWhiteToMove[pid].size());
-
 
 		printf("(%d) total: %d, time: %f\n", pid, total, bsp_time() - start);
 		bsp_sync();
@@ -154,27 +145,12 @@ class Test : public mcbsp::BSP_program {
 
 		CoreId currentCore = bsp_pid();
 		int nprocs = bsp_nprocs();
-		// If depth is uneven: white to move
-		// If depth is even: black to move		
 
-		/*int color = 0;
-		bool skipLayer = false;
-		if (max_depth % 2 == 0) {
-			// If max_depth is even, then last moves are for black, hash on white.
-			// Therefor, if the current depth is for black (even), skip the layer.
-			skipLayer = depth % 2 == 0;
-			color = 0;
-		} else {
-			// If max_depth is uneven, then last moves are for white, hash on black.
-			// Therefor, if the current depth is for white (uneven), skip the layer.
-			skipLayer = depth % 2 == 1;
-			color = 1;
-		}*/
-		bool skipLayer = (max_depth + depth) % 2 == 0;
-		int color = (max_depth) % 2;
+		bool skipLayer = shouldSkipLayer(depth);
+		int color = calculateColor();
 		
 		//If depth
-		if (false && skipLayer) {
+		if (skipLayer) {
 			cores[currentCore].insert(list.begin(), list.end());
 			corePositionSets[currentCore].insert(list.begin(), list.end());
 		} else {
@@ -189,11 +165,17 @@ class Test : public mcbsp::BSP_program {
 					corePositionSets[core].insert(position);
 				}
 			}
-		}
-
-		
+		}		
 
 		return corePositionSets;
+	}
+
+	int calculateColor() {	
+		return 0;//(max_depth + 1) % 2;
+	}
+
+	bool shouldSkipLayer(int depth) {		
+		return depth % 2 == 0; //(max_depth + depth + 1) % 2 == 0;
 	}
 
 	void sendRedistribution(vector<PositionSet> &redistribution) {

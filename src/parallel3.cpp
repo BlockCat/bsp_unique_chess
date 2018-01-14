@@ -157,11 +157,10 @@ class Test : public mcbsp::BSP_program {
 
 		int nprocs = bsp_nprocs();
 		for (auto it = list.begin(); it != list.end(); it++) {
-			CompressedPosition position = *it;
-
+			CompressedPosition position = *it;		
 			
 			
-			unsigned int hash = position.storage[0] +
+			BoardHash hash = position.storage[0] +
 				position.storage[1] +
 				position.storage[2] +
 				position.storage[3] +
