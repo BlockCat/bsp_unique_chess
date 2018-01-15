@@ -128,7 +128,8 @@ class Test : public mcbsp::BSP_program {
 		if (pid == 0) {
 			printf("\033[1;31mbold Total work: %d, effective: %f\n\033[0m", totalWork, (total / (float)totalWork));
 			printf("Average work per core: %d\n", totalWork / nprocs);
-			printf("Average time per core: %f\n", totalTime / (float)nprocs);
+			printf("Average effectivity per core: %f\n", totalTime / (float)nprocs);
+			printf("Total time: %f\n", timeItTook);
 		}
 	}
 
