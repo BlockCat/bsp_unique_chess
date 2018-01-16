@@ -1,0 +1,5 @@
+#!/bin/bash
+#SBATCH -t 3:00:00
+#SBATCH -n 2 -c 16
+cd $HOME/Students17/zonomiwo/bsp_unique_chess
+./parallel4 32 6
