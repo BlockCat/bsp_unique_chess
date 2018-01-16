@@ -71,65 +71,90 @@ class Test : public mcbsp::BSP_program {
 		// We are at this depth at the moment.
 		int currentDepth = 1;
 
-		// Soooooo.... Get the distribution
+		// Soooooo.... Get the distribution		
+		int totalSum = 0;
 
 		while (currentDepth < max_depth) {
 			// We go to the next depth
 			currentDepth++;
+			if (pid == 0) debug_print("\033[1;32mcurrent layer: %d\033[0m\n", currentDepth);
 
-			// Get the positions for the next layer
-			PositionSet nextLayer = execute(distribution);
-
-			unsigned long workSum = nextLayer.size();
+			// Get the positions for the next layer			
 
 			// Redistribute the positions for the cores.
 			vector<PositionSet> &colorToMove = (currentDepth % 2 == 0) ? corePositionsBlackToMove : corePositionsWhiteToMove;
-			vector<PositionSet> redistribution = redistribute(nextLayer, colorToMove , currentDepth);
+			
+			PositionSet nextLayer; 
+			vector<PositionSet> redistribution;
+			
+			if ((max_depth + currentDepth) % 2 == 0) {
+				PositionSet captured;				
+				double st = bsp_time();
+				executeExtraInfo(distribution, nextLayer, captured);
+				
+				debug_print("Execute size: %ld, time: %f\n", distribution.size(), bsp_time() - st);
+				st = bsp_time();
 
-			// Get the distribution for the next round
-			distribution = redistribution[pid];
-
-			// Send the redistribution to other cores.
+				totalSum += nextLayer.size() + captured.size();
+				
+				if(pid==0) debug_print("Captured: %ld, color: %d\n", captured.size(), max_depth % 2);
+				//redistribution = redistributeWithCaptured(nextLayer, captured, colorToMove, currentDepth);
+				redistribution = redistribute(captured, colorToMove, currentDepth);							
+				if(pid == 0) debug_print("Distribution time: %f\n", bsp_time() - st);
+				st = bsp_time();
+				distribution = nextLayer;
+				distribution.insert(redistribution[pid].begin(), redistribution[pid].end());
+				if(pid == 0) debug_print("c time: %f\n", bsp_time() - st);
+			} else {
+				double startTime = bsp_time();
+				nextLayer = execute(distribution);	
+				totalSum += nextLayer.size();			
+				debug_print("Execute size: %ld, time: %f\n", distribution.size(), bsp_time() - startTime);
+				if(pid==0) debug_print("NextLayer: %ld, color: %d\n", nextLayer.size(), max_depth % 2);
+				
+				redistribution = redistribute(nextLayer, colorToMove , currentDepth);							
+				if(pid == 0) debug_print("Distribution time: %f\n", bsp_time() - startTime);
+				distribution = redistribution[pid];				
+			}
+					
+			double st = bsp_time();
 			sendRedistribution(redistribution);
-
 			bsp_sync();
 
 			receiveDistribution(distribution);
+			if(pid == 0) debug_print("Communication time: %f\n", bsp_time() - st);
 			colorToMove[pid].insert(distribution.begin(), distribution.end());
 			debug_bsp_sync();
 
-
-
-			printf("(%d) Depth: %d, work done: %lu\n", pid, currentDepth, workSum);
+			debug_print("(%d) Depth: %d, work done: %lu\n", pid, currentDepth, nextLayer.size());
 			debug_print("(%d) distribution size: %lu\n", pid, distribution.size());
 		}
 
-		printf("There are %ld positions found in %d, time: %f \n", corePositionsBlackToMove[pid].size() + corePositionsWhiteToMove[pid].size(), (int)pid, bsp_time() - start);
+		debug_print("There are %ld positions found in %d, time: %f \n", corePositionsBlackToMove[pid].size() + corePositionsWhiteToMove[pid].size(), (int)pid, bsp_time() - start);
 
 
 
 		int total = merge(corePositionsBlackToMove[pid].size() + corePositionsWhiteToMove[pid].size());
 		double timeItTook = bsp_time() - start;
 
-		printf("(%d) total: %d, time: %f\n", pid, total, timeItTook);
+
 		bsp_sync();
 		
 		// DEBUG METHODS
-		int totalSum = 0;
-		for (int i = 0; i < bsp_nprocs(); i++) {
-			totalSum += corePositionsBlackToMove[i].size() + corePositionsWhiteToMove[i].size();
-		}
+
 		int totalWork = merge(totalSum);
+		
 		double totalTime = merge<double>(totalSum / (float)totalWork  - (1.0 / (float)nprocs) ) + bsp_nprocs() - 1;
 
 		// ----------------------
-		printf("(%d) total work: %d, effective: %f\n", pid, totalSum, totalSum / (float)totalWork  - (1.0 / (float)nprocs) );
+		debug_print("(%d) total work: %d, effective: %f\n", pid, totalSum, totalSum / (float)totalWork  - (1.0 / (float)nprocs) );
+		
 		bsp_sync();
-		if (pid == 0) {
-			printf("\033[1;31mbold Total work: %d, effective: %f\n\033[0m", totalWork, (total / (float)totalWork));
+		if (pid == 0) {			
+			printf("\033[1;31m Total work: %d, effective: %f\n\033[0m", totalWork, (total / (float)totalWork));
 			printf("Average work per core: %d\n", totalWork / nprocs);
-			printf("Average effectivity per core: %f\n", totalTime / (float)nprocs);
-			printf("Total time: %f\n", timeItTook);
+			printf("Average effectivity per core: %f\n", totalTime / (float)nprocs);			
+			printf("Total: %d, time: %f\n", total, timeItTook);
 		}
 	}
 
@@ -146,6 +171,14 @@ class Test : public mcbsp::BSP_program {
 
 		return nextDepth;
 	}
+	
+	//Mutually exclusive
+	void executeExtraInfo(PositionSet &distribution, PositionSet &children, PositionSet &capture) {		
+		for (auto it = distribution.begin(); it != distribution.end(); it++) {
+			CompressedPosition position = *it;			
+			GetChildrenExtraInfo(position, children, capture);			
+		}
+	}
 
 	/// Returns what should be send to other cores
 	/// This method distributes the positions over the different cores and adds them to the found list.
@@ -157,8 +190,7 @@ class Test : public mcbsp::BSP_program {
 		CoreId currentCore = bsp_pid();
 		int nprocs = bsp_nprocs();
 	
-		int color = (max_depth) % 2;		
-		if (currentCore == 0) printf("color: %d", color);
+		int color = (max_depth) % 2;				
 		for (auto it = list.begin(); it != list.end(); it++) {
 			CompressedPosition position = *it;
 			BoardHash hash = hashPositionColor(position, color);
@@ -173,18 +205,44 @@ class Test : public mcbsp::BSP_program {
 
 		return corePositionSets;
 	}
+	
+	vector<PositionSet> redistributeWithCaptured(PositionSet &list, PositionSet &captured, vector<PositionSet> &cores, int depth, const bool force = false) {
+		// Reserve space for redistribution set.
+		vector<PositionSet> corePositionSets = vector<PositionSet>(bsp_nprocs(), PositionSet());
+
+		CoreId currentCore = bsp_pid();
+		int nprocs = bsp_nprocs();
+	
+		int color = (max_depth) % 2;				
+		for (auto it = captured.begin(); it != captured.end(); it++) {
+			CompressedPosition position = *it;
+			BoardHash hash = hashPositionColor(position, color);
+			CoreId core = nprocs == 1 ? 0 : hash % nprocs;			
+
+			// If we haven't seen this one yet, send it.
+			if (cores[core].insert(position).second) {
+				corePositionSets[core].insert(position);
+			}
+		}		
+		corePositionSets[currentCore].insert(list.begin(), list.end());
+		corePositionSets[currentCore].erase(captured.begin(), captured.end());
+
+		return corePositionSets;
+	}
 
 	void sendRedistribution(vector<PositionSet> &redistribution) {
 		// Send the tag.
 		int pid = bsp_pid();
-
+		int sum = 0;
 		for (int i = 0; i < redistribution.size(); i++) {
 			if (i != pid) {
 				vector<CompressedPosition> vec;
 				vec.insert(vec.begin(), redistribution[i].begin(), redistribution[i].end());
+				sum += vec.size();
 				bsp_send(i, &pid, &vec[0], vec.size());
 			}
 		}
+		//printf("(%d) Sending distribution: %d\n", bsp_pid(), sum);
 	}
 
 	void receiveDistribution(PositionSet &distribution) {

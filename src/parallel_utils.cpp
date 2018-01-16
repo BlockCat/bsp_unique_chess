@@ -60,6 +60,28 @@ PositionSet GetCompressedChildren(CompressedPosition &position) {
 	return children;
 }
 
+//Mutually exclusive 
+void GetChildrenExtraInfo(CompressedPosition &position, PositionSet &children, PositionSet &captures) {
+	ChessRules* board = new ChessRules();
+	board->Decompress(position);
+
+	MoveList legal;
+	board->GenLegalMoveList(legal);
+
+	for (auto it = legal.begin(); it != legal.end(); it++) {
+		board->PlayMove(*it);
+		auto p = compress(board);		
+		board->PopMove(*it);
+
+		// Check if the capture is empty
+		if ((*it).capture != ' ') {
+			captures.insert(p);
+		} else {
+			children.insert(p);
+		}
+	}
+	free(board);
+}
 
 
 // Hash the board
