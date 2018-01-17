@@ -308,26 +308,20 @@ void bs() {
 	(new Test())->spmd();
 	bsp_end();
 }
-int main(int argc, char* args[]) {	
-	bsp_init(&bs, argc, args);	
-	printf("Start algorithm\n");
+int main(int argc, char* args[]) {		
 	switch (argc) {
 	case 0:
 	case 1:
 		max_depth = 4;
 		cores = 2;
 		break;
-	case 2:
-		max_depth = 4;
-		cores = atoi(args[1]);
-		break;
-	case 3:
-		max_depth = atoi(args[2]);
-		cores = atoi(args[1]);
-		break;
+	default 2:
+		max_depth = atoi(args[1]);	
 	}
-
 	printf("Depth: %d, cores: %d\n", max_depth, cores);
+	bsp_init(&bs, argc, args);	
+	printf("Start algorithm\n");
+
 
 	if (max_depth == 0) {
 		printf("Hardcoded position: 1, time 0\n");
