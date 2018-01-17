@@ -34,6 +34,7 @@ using namespace std;
 // - We might get a lot of extra work though??? I don't think so, but we can not send things that have already been send to the core.
 
 int max_depth = 4;
+int cores;
 
 class Test : public mcbsp::BSP_program {
 
@@ -298,11 +299,16 @@ class Test : public mcbsp::BSP_program {
 	}
 };
 
+void bs() {
+	bsp_begin(cores)
+	new Test()->spmd();
+	bsp_end();
+}
 int main(int argc, char* args[]) {
-
+	bsp_init(&argc, argv)
 	printf("Start algorithm\n");
 
-	int cores;
+	
 
 	switch (argc) {
 	case 0:
@@ -327,6 +333,7 @@ int main(int argc, char* args[]) {
 		return 0;
 	}
 
-	Test* test = new Test();
-	test->begin(cores);
+	//Test* test = new Test();
+	bsp_init(&bs, argc, args);
+	//test->begin(cores);
 }

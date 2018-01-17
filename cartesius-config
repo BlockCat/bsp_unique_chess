@@ -1,5 +1,8 @@
 #!/bin/bash
-#SBATCH -t 3:00:00
+#SBATCH -t 0:00:30
 #SBATCH -n 2 -c 16
+module load mpi/intel
+module load bsponmpi c/intel
 cd $HOME/Students17/zonomiwo/bsp_unique_chess
-./parallel4 32 6
+srun ./parallel4 1 6
+                                          
