@@ -36,7 +36,7 @@ using namespace std;
 int max_depth = 4;
 int cores;
 
-class Test : /*public mcbsp::BSP_program*/ {
+class Test /*: public mcbsp::BSP_program*/ {
 
 public:
 	void spmd() {
