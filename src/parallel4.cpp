@@ -264,11 +264,14 @@ public:
 			}
 
 			int amount = payload / sizeof(CompressedPosition);
-			vector<CompressedPosition> positions = vector<CompressedPosition>(amount);
+			//vector<CompressedPosition> positions = vector<CompressedPosition>(amount);
+			CompressedPosition* positions = (CompressedPosition*)malloc(payload);
 			bsp_move<CompressedPosition>(&positions[0], amount);
 
-			distribution.insert(positions.begin(), positions.end());
-			positions.clear();
+			//distribution.insert(positions.begin(), positions.end());
+			//positions.clear();
+			for(int j = 0; j < amount; j++) distribution.insert(positions[j]);
+			free(positions);
 		}
 	}
 
