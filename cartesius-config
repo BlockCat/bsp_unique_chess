@@ -5,4 +5,3 @@ module load mpi/intel
 module load bsponmpi c/intel
 cd $HOME/Students17/zonomiwo/bsp_unique_chess
 srun ./parallel4 1 6
-                                          

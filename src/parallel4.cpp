@@ -36,8 +36,9 @@ using namespace std;
 int max_depth = 4;
 int cores;
 
-class Test : public mcbsp::BSP_program {
+class Test : /*public mcbsp::BSP_program*/ {
 
+public:
 	void spmd() {
 
 		int nprocs = bsp_nprocs();
@@ -196,7 +197,7 @@ class Test : public mcbsp::BSP_program {
 			CompressedPosition position = *it;
 			BoardHash hash = hashPositionColor(position, color);
 
-			CoreId core = nprocs == 1 ? 0 : hash % nprocs;
+			CoreId core = /*nprocs == 1 ? 0 :*/ hash % nprocs;
 
 			// If we haven't seen this one yet, send it.
 			if (cores[core].insert(position).second) {
@@ -293,23 +294,20 @@ class Test : public mcbsp::BSP_program {
 
 		return sum - bsp_nprocs() + 1;
 	}
-
+/*
 	virtual BSP_program * newInstance() {
 		return new Test();
-	}
+	}*/
 };
 
 void bs() {
-	bsp_begin(cores)
-	new Test()->spmd();
+	bsp_begin(bsp_nprocs());
+	(new Test())->spmd();
 	bsp_end();
 }
-int main(int argc, char* args[]) {
-	bsp_init(&argc, argv)
+int main(int argc, char* args[]) {	
+	bsp_init(&bs, argc, args);	
 	printf("Start algorithm\n");
-
-	
-
 	switch (argc) {
 	case 0:
 	case 1:
@@ -334,6 +332,7 @@ int main(int argc, char* args[]) {
 	}
 
 	//Test* test = new Test();
-	bsp_init(&bs, argc, args);
+	
+	bs();
 	//test->begin(cores);
 }
