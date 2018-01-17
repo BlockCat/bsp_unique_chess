@@ -315,7 +315,7 @@ int main(int argc, char* args[]) {
 		max_depth = 4;
 		cores = 2;
 		break;
-	default 2:
+	default:
 		max_depth = atoi(args[1]);	
 	}
 	printf("Depth: %d, cores: %d\n", max_depth, cores);
